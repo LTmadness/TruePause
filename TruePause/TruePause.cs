@@ -6,7 +6,7 @@ using UnityEngine;
 namespace TruePause
 {
 
-	[BepInPlugin("org.ltmadness.valheim.truepause", "TruePause", "0.0.1")]
+	[BepInPlugin("org.ltmadness.valheim.truepause", "TruePause", "0.0.2")]
     public class TruePause : BaseUnityPlugin
     {
 		public void Awake() => Harmony.CreateAndPatchAll(typeof(TruePause), null);
