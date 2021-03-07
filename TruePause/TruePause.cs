@@ -2,8 +2,6 @@
 using HarmonyLib;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 namespace TruePause
 {
@@ -11,8 +9,8 @@ namespace TruePause
 	[BepInPlugin("org.ltmadness.valheim.truepause", "TruePause", "0.0.1")]
     public class TruePause : BaseUnityPlugin
     {
-		private static List<string> windows = new List<string>() { "MenuRoot", "Audio", "Controls", "Misc", "Graphics", "dialog" };
 		public void Awake() => Harmony.CreateAndPatchAll(typeof(TruePause), null);
+
 
 		[HarmonyPatch(typeof(Menu), "Update")]
 		[HarmonyPrefix]
@@ -28,7 +26,6 @@ namespace TruePause
 				AccessTools.Field(typeof(Menu), "m_hiddenFrames").SetValue(__instance, 0);
 				if ((Input.GetKeyDown(KeyCode.Escape) || ZInput.GetButtonDown("JoyMenu")) && !(GameObject)AccessTools.Field(typeof(Menu), "m_settingsInstance").GetValue(__instance) && !Feedback.IsVisible())
 				{
-					Time.timeScale = 1f;
 					if (__instance.m_quitDialog.gameObject.activeSelf)
 					{
 						__instance.OnQuitNo();
@@ -39,6 +36,7 @@ namespace TruePause
 						__instance.OnLogoutNo();
 						return false;
 					}
+					Time.timeScale = 1f;
 					__instance.m_root.gameObject.SetActive(false);
 					return false;
 				}
@@ -54,6 +52,8 @@ namespace TruePause
 					if (ZNet.instance.IsServer())
 					{
 						Time.timeScale = 0f;
+						__instance.m_root.Find("OLD_menu").gameObject.SetActive(true);
+						__instance.m_root.Find("Menu").gameObject.SetActive(false);
 					}
 					Gogan.LogEvent("Screen", "Enter", "Menu", 0L);
 					__instance.m_root.gameObject.SetActive(true);
@@ -64,24 +64,54 @@ namespace TruePause
 			}
 			return false;
 		}
+
 		[HarmonyPatch(typeof(Menu), "OnLogoutYes")]
 		[HarmonyPrefix]
-		public static bool OnLogoutYes()
+		public static void OnLogoutYes()
 		{
 			Time.timeScale = 1f;
-			Gogan.LogEvent("Game", "LogOut", "", 0L);
-			Game.instance.Logout();
-			return false;
 		}
 
 		[HarmonyPatch(typeof(Menu), "OnQuitYes")]
 		[HarmonyPrefix]
-		public static bool OnQuitYes()
+		public static void OnQuitYes()
 		{
 			Time.timeScale = 1f;
-			Gogan.LogEvent("Game", "Quit", "", 0L);
-			Application.Quit();
-			return false;
+		}
+
+		[HarmonyPatch(typeof(Menu), "OnClose")]
+		[HarmonyPrefix]
+		public static void OnClose(ref Menu __instance)
+		{
+			Time.timeScale = 1f;
+		}
+
+		[HarmonyPatch(typeof(Menu), "OnQuit")]
+		[HarmonyPrefix]
+		public static void OnQuit(ref Menu __instance)
+		{
+			__instance.m_root.Find("OLD_menu").gameObject.SetActive(false);
+		}
+
+		[HarmonyPatch(typeof(Menu), "OnLogout")]
+		[HarmonyPrefix]
+		public static void OnLogout(ref Menu __instance)
+		{
+			__instance.m_root.Find("OLD_menu").gameObject.SetActive(false);
+		}
+
+		[HarmonyPatch(typeof(Menu), "OnLogoutNo")]
+		[HarmonyPrefix]
+		public static void OnLogoutNo(ref Menu __instance)
+		{
+			__instance.m_root.Find("OLD_menu").gameObject.SetActive(true);
+		}
+
+		[HarmonyPatch(typeof(Menu), "OnQuitNo")]
+		[HarmonyPrefix]
+		public static void OnQuitNo(ref Menu __instance)
+		{
+			__instance.m_root.Find("OLD_menu").gameObject.SetActive(true);
 		}
 	}
 }
