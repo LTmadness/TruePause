@@ -5,7 +5,7 @@ using UnityEngine;
 namespace TruePause
 {
 
-	[BepInPlugin("org.ltmadness.valheim.truepause", "TruePause", "0.0.2")]
+	[BepInPlugin("org.ltmadness.valheim.truepause", "TruePause", "0.0.3")]
     public class TruePause : BaseUnityPlugin
     {
 		public void Awake() => Harmony.CreateAndPatchAll(typeof(TruePause), null);
@@ -48,6 +48,8 @@ namespace TruePause
 				bool flag = !InventoryGui.IsVisible() && !Minimap.IsOpen() && !global::Console.IsVisible() && !TextInput.IsVisible() && !ZNet.instance.InPasswordDialog() && !StoreGui.IsVisible() && !Hud.IsPieceSelectionVisible();
 				if ((Input.GetKeyDown(KeyCode.Escape) || ZInput.GetButtonDown("JoyMenu")) && flag)
 				{
+					__instance.m_root.gameObject.SetActive(true);
+					__instance.m_menuDialog.gameObject.SetActive(true);
 					if (ZNet.instance.IsServer())
 					{
 						Time.timeScale = 0f;
@@ -55,8 +57,6 @@ namespace TruePause
 						__instance.m_root.Find("Menu").gameObject.SetActive(false);
 					}
 					Gogan.LogEvent("Screen", "Enter", "Menu", 0L);
-					__instance.m_root.gameObject.SetActive(true);
-					__instance.m_menuDialog.gameObject.SetActive(true);
 					__instance.m_logoutDialog.gameObject.SetActive(false);
 					__instance.m_quitDialog.gameObject.SetActive(false);
 				}
@@ -65,52 +65,68 @@ namespace TruePause
 		}
 
 		[HarmonyPatch(typeof(Menu), "OnLogoutYes")]
-		[HarmonyPrefix]
+		[HarmonyPostfix]
 		public static void OnLogoutYes()
 		{
 			Time.timeScale = 1f;
 		}
 
 		[HarmonyPatch(typeof(Menu), "OnQuitYes")]
-		[HarmonyPrefix]
+		[HarmonyPostfix]
 		public static void OnQuitYes()
 		{
 			Time.timeScale = 1f;
 		}
 
 		[HarmonyPatch(typeof(Menu), "OnClose")]
-		[HarmonyPrefix]
+		[HarmonyPostfix]
 		public static void OnClose(ref Menu __instance)
 		{
 			Time.timeScale = 1f;
 		}
 
 		[HarmonyPatch(typeof(Menu), "OnQuit")]
-		[HarmonyPrefix]
+		[HarmonyPostfix]
 		public static void OnQuit(ref Menu __instance)
 		{
-			__instance.m_root.Find("OLD_menu").gameObject.SetActive(false);
+			if (ZNet.instance.IsServer())
+			{
+				__instance.m_root.Find("OLD_menu").gameObject.SetActive(false);
+				__instance.m_root.Find("Menu").gameObject.SetActive(false);
+			}
 		}
 
 		[HarmonyPatch(typeof(Menu), "OnLogout")]
-		[HarmonyPrefix]
+		[HarmonyPostfix]
 		public static void OnLogout(ref Menu __instance)
 		{
-			__instance.m_root.Find("OLD_menu").gameObject.SetActive(false);
+			if (ZNet.instance.IsServer())
+			{
+				__instance.m_root.Find("OLD_menu").gameObject.SetActive(false);
+				__instance.m_root.Find("Menu").gameObject.SetActive(false);
+			}
 		}
 
 		[HarmonyPatch(typeof(Menu), "OnLogoutNo")]
-		[HarmonyPrefix]
+		[HarmonyPostfix]
 		public static void OnLogoutNo(ref Menu __instance)
 		{
-			__instance.m_root.Find("OLD_menu").gameObject.SetActive(true);
+			if (ZNet.instance.IsServer())
+			{
+				__instance.m_root.Find("OLD_menu").gameObject.SetActive(true);
+				__instance.m_root.Find("Menu").gameObject.SetActive(false);
+			}
 		}
 
 		[HarmonyPatch(typeof(Menu), "OnQuitNo")]
-		[HarmonyPrefix]
+		[HarmonyPostfix]
 		public static void OnQuitNo(ref Menu __instance)
 		{
-			__instance.m_root.Find("OLD_menu").gameObject.SetActive(true);
+			if (ZNet.instance.IsServer())
+			{
+				__instance.m_root.Find("OLD_menu").gameObject.SetActive(true);
+				__instance.m_root.Find("Menu").gameObject.SetActive(false);
+			}
 		}
 	}
 }
