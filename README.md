@@ -6,6 +6,11 @@ If you would like to support my mods you can do it here:
 https://www.patreon.com/LTmadness
 
 ### Changes
+v0.0.4
+- Audio is paused when the game is paused
+- Added new configuration:
+	* When selecting diffrent application while game is running game will be pause (if set to true)
+
 v0.0.3
 - Small visual fix
 
