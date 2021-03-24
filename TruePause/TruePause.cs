@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using BepInEx.Configuration;
 using HarmonyLib;
 using UnityEngine;
 
@@ -8,8 +9,13 @@ namespace TruePause
     [BepInPlugin("org.ltmadness.valheim.truepause", "TruePause", "0.0.3")]
     public class TruePause : BaseUnityPlugin
     {
-        public void Awake() => Harmony.CreateAndPatchAll(typeof(TruePause), null);
-
+        private static bool musicStopped = false;
+        private static ConfigEntry<bool> focusPause;
+        public void Awake()
+        {
+            focusPause = Config.Bind<bool>("Settings", "Pause when game is not focused", true, "If window you focused ojn is not the game the game will pause");
+            Harmony.CreateAndPatchAll(typeof(TruePause), null);
+        }
 
         [HarmonyPatch(typeof(Menu), "Update")]
         [HarmonyPrefix]
@@ -35,7 +41,7 @@ namespace TruePause
                         __instance.OnLogoutNo();
                         return false;
                     }
-                    Time.timeScale = 1f;
+                    StartTime();
                     __instance.m_root.gameObject.SetActive(false);
                     return false;
                 }
@@ -46,13 +52,13 @@ namespace TruePause
                 m_hiddenFrames++;
                 AccessTools.Field(typeof(Menu), "m_hiddenFrames").SetValue(__instance, m_hiddenFrames);
                 bool flag = !InventoryGui.IsVisible() && !Minimap.IsOpen() && !global::Console.IsVisible() && !TextInput.IsVisible() && !ZNet.instance.InPasswordDialog() && !StoreGui.IsVisible() && !Hud.IsPieceSelectionVisible();
-                if ((Input.GetKeyDown(KeyCode.Escape) || ZInput.GetButtonDown("JoyMenu")) && flag)
+                if (((Input.GetKeyDown(KeyCode.Escape) || ZInput.GetButtonDown("JoyMenu")) || (!Application.isFocused && focusPause.Value && ZNet.instance.IsServer())) && flag)
                 {
                     __instance.m_root.gameObject.SetActive(true);
                     __instance.m_menuDialog.gameObject.SetActive(true);
                     if (ZNet.instance.IsServer())
                     {
-                        Time.timeScale = 0f;
+                        StopTime();
                         __instance.m_root.Find("OLD_menu").gameObject.SetActive(true);
                         __instance.m_root.Find("Menu").gameObject.SetActive(false);
                     }
@@ -68,21 +74,21 @@ namespace TruePause
         [HarmonyPostfix]
         public static void OnLogoutYes()
         {
-            Time.timeScale = 1f;
+            StartTime();
         }
 
         [HarmonyPatch(typeof(Menu), "OnQuitYes")]
         [HarmonyPostfix]
         public static void OnQuitYes()
         {
-            Time.timeScale = 1f;
+            StartTime();
         }
 
         [HarmonyPatch(typeof(Menu), "OnClose")]
         [HarmonyPostfix]
         public static void OnClose(ref Menu __instance)
         {
-            Time.timeScale = 1f;
+            StartTime();
         }
 
         [HarmonyPatch(typeof(Menu), "OnQuit")]
@@ -126,6 +132,30 @@ namespace TruePause
             {
                 __instance.m_root.Find("OLD_menu").gameObject.SetActive(true);
                 __instance.m_root.Find("Menu").gameObject.SetActive(false);
+            }
+        }
+
+        [HarmonyPatch(typeof(MusicMan), "UpdateMusic")]
+        [HarmonyPrefix]
+        public static bool UpdateMusic(/*float dt*/)
+        {
+            return !musicStopped;
+        }
+
+            public static void StopTime()
+        {
+            Time.timeScale = 0f;
+            AudioListener.pause = true;
+            musicStopped = true;
+        }
+
+        public static void StartTime()
+        {
+            if (Time.timeScale.Equals(0f))
+            {
+                Time.timeScale = 1f;
+                AudioListener.pause = false;
+                musicStopped = false;
             }
         }
     }
