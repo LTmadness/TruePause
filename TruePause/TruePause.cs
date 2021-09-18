@@ -6,7 +6,7 @@ using UnityEngine;
 namespace TruePause
 {
 
-    [BepInPlugin("org.ltmadness.valheim.truepause", "TruePause", "0.0.3")]
+    [BepInPlugin("org.ltmadness.valheim.truepause", "TruePause", "0.0.5")]
     public class TruePause : BaseUnityPlugin
     {
         private static bool musicStopped = false;
